@@ -1,6 +1,0 @@
-@code {
-    [Parameter] public string  Variant { get; set; } = "amber";  // amber | green | red | blue
-    [Parameter] public RenderFragment? ChildContent { get; set; }
-}
-
-<span class="pill pill-@Variant">@ChildContent</span>
