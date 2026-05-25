@@ -1,0 +1,58 @@
+@inherits LayoutComponentBase
+@inject AuthService Auth
+@inject NavigationManager Nav
+
+@code {
+    private record NavLink(string Url, string Icon, string Label, string Rf);
+    private readonly NavLink[] _links = new[]
+    {
+        new NavLink("/admin",            "📊", "Dashboard",   ""),
+        new NavLink("/admin/pedidos",    "💬", "Pedidos WA",  "RNF010"),
+        new NavLink("/admin/inventario", "📦", "Inventario",  "RF004·05"),
+        new NavLink("/admin/productos",  "🛒", "Productos",   "RF002·03"),
+        new NavLink("/admin/proveedores","🚚", "Proveedores", ""),
+        new NavLink("/admin/mermas",     "🔄", "Mermas",      "RF011·12"),
+        new NavLink("/admin/promociones","🏷️", "Promociones", "RF009·10"),
+        new NavLink("/admin/reportes",   "📈", "Reportes",    "RF013·14"),
+        new NavLink("/admin/usuarios",   "👥", "Usuarios",    "RF001"),
+    };
+
+    private bool EsActiva(string url)
+    {
+        var current = Nav.ToBaseRelativePath(Nav.Uri).TrimEnd('/');
+        var target  = url.TrimStart('/').TrimEnd('/');
+        return current == target;
+    }
+}
+
+<div class="app-shell">
+    <AppHeader BadgeText="ADMINISTRACIÓN" BadgeColor="green" />
+
+    <div class="app-body">
+        <aside class="app-sidebar">
+            <div class="muted" style="font-size:10px; letter-spacing:1px; padding:0 8px;
+                                       margin-bottom:6px; text-transform:uppercase; font-weight:600;">Módulos</div>
+
+            @foreach (var l in _links)
+            {
+                <a class="nav-item @(EsActiva(l.Url) ? "active" : "")" href="@l.Url">
+                    <span style="font-size:15px;">@l.Icon</span>
+                    <span style="flex:1;">@l.Label</span>
+                </a>
+            }
+
+            <div style="margin-top:auto; padding:14px 11px; border-top:1px solid var(--color-border);">
+                <div class="muted" style="font-size:9px; letter-spacing:1px; margin-bottom:4px; text-transform:uppercase;">Stack</div>
+                <div style="font-size:11px; line-height:1.5;">Front · .NET 10 + Blazor</div>
+                <div style="font-size:11px; line-height:1.5;">API · Java 25 (DAO·BL·CTRL)</div>
+                <div style="font-size:11px; line-height:1.5;">DB · SQL Server · SP</div>
+                <div style="font-size:11px; line-height:1.5;">Bot · WhatsApp + n8n</div>
+                <div class="muted" style="font-size:10px; margin-top:6px;">Team Script E04 · 2026</div>
+            </div>
+        </aside>
+
+        <main class="app-main">
+            @Body
+        </main>
+    </div>
+</div>

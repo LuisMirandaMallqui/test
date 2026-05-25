@@ -1,0 +1,77 @@
+@page "/admin/pedidos"
+@layout AdminLayout
+@inject PedidoService PedidoSvc
+
+@*  Pedidos recibidos vía WhatsApp Bot (n8n) — RNF010.                       *@
+
+@code {
+    private List<Pedido> _pedidos = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _pedidos = await PedidoSvc.ListarWhatsAppAsync();
+    }
+
+    private (string ic, string l, string c) Status(EstadoPedido e) => e switch
+    {
+        EstadoPedido.Pendiente  => ("🕐", "Pendiente",  "var(--color-amber)"),
+        EstadoPedido.Preparando => ("👨‍🍳", "Preparando", "var(--color-blue)"),
+        EstadoPedido.EnRuta     => ("🛵", "En camino",  "var(--color-amber2)"),
+        EstadoPedido.Entregado  => ("✓",  "Entregado",  "var(--color-green)"),
+        _ => ("•", e.ToString(), "var(--color-muted)"),
+    };
+}
+
+<div style="display:flex; align-items:center; margin-bottom:18px; gap:14px;">
+    <div style="font-family:var(--font-heading); font-weight:800; font-size:22px;">💬 Pedidos WhatsApp</div>
+    <Pill Variant="amber">RNF010 · n8n</Pill>
+    <div style="flex:1;"></div>
+    <button class="btn btn-ghost">🔄 Refrescar</button>
+    <button class="btn btn-primary" style="padding:8px 14px; font-size:12px;">📤 Exportar</button>
+</div>
+
+<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:16px;">
+    @foreach (var e in Enum.GetValues<EstadoPedido>())
+    {
+        var cnt = _pedidos.Count(p => p.Estado == e);
+        if (cnt == 0 && e == EstadoPedido.Anulado) continue;
+        var s = Status(e);
+        <div class="card" style="padding:12px 14px;">
+            <div class="muted" style="font-size:11px; margin-bottom:2px;">@s.ic @s.l</div>
+            <div class="mono" style="font-weight:700; font-size:22px; color:@s.c;">@cnt</div>
+        </div>
+    }
+</div>
+
+<div class="card" style="padding:0; overflow:hidden;">
+    <table class="tbl">
+        <thead><tr><th>#Pedido</th><th>Cliente</th><th>Dirección</th><th>Items</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody>
+            @foreach (var p in _pedidos)
+            {
+                var s = Status(p.Estado);
+                <tr>
+                    <td class="mono amber" style="font-weight:700;">@p.Codigo</td>
+                    <td>
+                        <div style="font-weight:600;">@p.ClienteNombre</div>
+                    </td>
+                    <td class="muted" style="max-width:160px;">@p.DireccionEntrega</td>
+                    <td class="mono">@p.Detalles.Count</td>
+                    <td class="mono amber" style="font-weight:700;">S/@p.Total.ToString("F2")</td>
+                    <td>
+                        <span style="display:inline-block; background:@(s.c)22; color:@s.c;
+                                     padding:3px 10px; border-radius:20px; font-size:10px; font-weight:700;
+                                     font-family:var(--font-heading);">@s.ic @s.l</span>
+                    </td>
+                    <td style="display:flex; gap:4px;">
+                        <button class="btn btn-ghost" style="padding:4px 8px; font-size:11px;">Ver</button>
+                        @if (p.Estado != EstadoPedido.Entregado)
+                        {
+                            <button class="btn btn-primary" style="padding:4px 8px; font-size:11px;">→</button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
