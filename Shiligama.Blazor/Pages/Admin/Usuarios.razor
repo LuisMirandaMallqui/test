@@ -1,0 +1,77 @@
+@page "/admin/usuarios"
+@layout AdminLayout
+
+@*  Personal y control de roles — RF001, RNF004 (RBAC), RNF005 (MD-5).      *@
+
+@code {
+    private record UserRow(string Name, RolUsuario Rol, string User, string LastAccess, bool Active);
+    private readonly UserRow[] _users = new[]
+    {
+        new UserRow("Admin General",  RolUsuario.Administrador, "admin",   "Hace 5 min",  true),
+        new UserRow("María López",    RolUsuario.Trabajador,    "cajero",  "Hace 2 horas",true),
+        new UserRow("Cliente Demo",   RolUsuario.Cliente,       "cliente", "Ayer",        true),
+    };
+
+    private string Color(RolUsuario r) => r switch
+    {
+        RolUsuario.Administrador => "var(--color-green)",
+        RolUsuario.Trabajador    => "var(--color-amber)",
+        _                        => "var(--color-blue)",
+    };
+    private string Variant(RolUsuario r) => r switch
+    {
+        RolUsuario.Administrador => "green",
+        RolUsuario.Trabajador    => "amber",
+        _                        => "blue",
+    };
+}
+
+<div style="display:flex; align-items:center; margin-bottom:18px; gap:14px;">
+    <div style="font-family:var(--font-heading); font-weight:800; font-size:22px;">👥 Personal & Roles</div>
+    <Pill Variant="amber">RF001 · RNF004</Pill>
+    <div style="flex:1;"></div>
+    <button class="btn btn-primary" style="padding:8px 14px; font-size:12px;">+ Nuevo usuario</button>
+</div>
+
+<div style="background:rgba(59,130,246,.07); border:1px solid rgba(59,130,246,.2);
+            border-radius:12px; padding:12px 16px; margin-bottom:16px;
+            display:flex; gap:12px; align-items:center;">
+    <span style="font-size:20px;">🔐</span>
+    <div class="muted" style="flex:1; font-size:12px;">
+        Control de acceso basado en roles (RBAC). Credenciales cifradas con MD-5 (RNF005).
+        Toda comunicación vía HTTPS (RNF006). Trazabilidad de acciones por usuario y fecha (RNF012).
+    </div>
+</div>
+
+<div class="card" style="padding:0; overflow:hidden;">
+    <table class="tbl">
+        <thead><tr><th>Nombre</th><th>Rol</th><th>Usuario</th><th>Último acceso</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody>
+            @foreach (var u in _users)
+            {
+                <tr>
+                    <td style="font-weight:600;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div style="width:30px; height:30px; border-radius:50%; background:@Color(u.Rol);
+                                        color:var(--color-navy); display:flex; align-items:center; justify-content:center;
+                                        font-family:var(--font-heading); font-weight:800; font-size:13px;">
+                                @u.Name[0]
+                            </div>
+                            @u.Name
+                        </div>
+                    </td>
+                    <td><Pill Variant="@Variant(u.Rol)">@u.Rol.ToString().ToUpper()</Pill></td>
+                    <td class="mono muted">@u.User</td>
+                    <td class="muted">@u.LastAccess</td>
+                    <td>
+                        @if (u.Active) { <Pill Variant="green">● Activo</Pill> } else { <Pill Variant="red">● Bloqueado</Pill> }
+                    </td>
+                    <td>
+                        <button class="btn btn-ghost" style="padding:3px 8px; font-size:10px; margin-right:4px;">Editar</button>
+                        <button class="btn btn-ghost" style="padding:3px 8px; font-size:10px; color:var(--color-red); border-color:rgba(224,51,34,.3);">Bloquear</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

@@ -1,0 +1,103 @@
+@*  Modal de cobro POS / Web — RF007 métodos de pago, RF006 emisión Nubefact. *@
+@code {
+    [Parameter, EditorRequired] public decimal Total { get; set; }
+    [Parameter] public EventCallback<(MetodoPago metodo, decimal efectivo)> OnConfirmar { get; set; }
+    [Parameter] public EventCallback OnCerrar { get; set; }
+
+    private MetodoPago _metodo = MetodoPago.Efectivo;
+    private decimal _montoRecibido;
+
+    private decimal Vuelto => System.Math.Max(0, _montoRecibido - Total);
+    private bool Valido => _metodo != MetodoPago.Efectivo || _montoRecibido >= Total;
+
+    private static readonly (MetodoPago m, string ic, string l)[] Metodos = new[]
+    {
+        (MetodoPago.Efectivo,    "💵", "Efectivo"),
+        (MetodoPago.Yape,        "💜", "Yape"),
+        (MetodoPago.Plin,        "💚", "Plin"),
+        (MetodoPago.Tarjeta,     "💳", "Tarjeta"),
+        (MetodoPago.MercadoPago, "🏦", "Merc.Pago"),
+    };
+
+    private async Task Confirmar()
+    {
+        if (!Valido) return;
+        await OnConfirmar.InvokeAsync((_metodo, _montoRecibido));
+    }
+}
+
+<div class="overlay" style="position:fixed; inset:0; background:rgba(6,12,20,.85);
+                            display:flex; align-items:center; justify-content:center; z-index:90;"
+     @onclick="() => OnCerrar.InvokeAsync()">
+
+    <div class="card fade-up" @onclick:stopPropagation
+         style="width:480px; max-width:96vw; padding:28px;">
+
+        <div style="font-family:var(--font-heading); font-weight:800; font-size:22px; margin-bottom:14px;">
+            💳 COBRO DE VENTA
+        </div>
+
+        <div style="background:var(--color-navy3); border-radius:12px; padding:12px 16px; margin-bottom:14px;
+                    display:flex; justify-content:space-between; align-items:center;">
+            <span class="muted" style="font-size:13px;">Total a cobrar</span>
+            <span class="mono amber" style="font-weight:700; font-size:28px;">S/@Total.ToString("F2")</span>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:16px;">
+            @foreach (var m in Metodos)
+            {
+                <button class="btn"
+                        @onclick="() => _metodo = m.m"
+                        style="padding:10px 4px; border-radius:10px; text-align:center;
+                               background:@(_metodo == m.m ? "var(--color-amber)" : "var(--color-card)");
+                               color:@(_metodo == m.m ? "var(--color-navy)" : "var(--color-offwhite)");
+                               border:@(_metodo == m.m ? "none" : "1px solid var(--color-border)");
+                               font-size:12px;">
+                    <div style="font-size:18px; margin-bottom:2px;">@m.ic</div>@m.l
+                </button>
+            }
+        </div>
+
+        @if (_metodo == MetodoPago.Efectivo)
+        {
+            <input class="inp" type="number" placeholder="Monto recibido"
+                   @bind="_montoRecibido"
+                   style="font-family:var(--font-mono); font-weight:700; font-size:18px; text-align:right; margin-bottom:10px;" />
+            @if (_montoRecibido > 0)
+            {
+                <div style="display:flex; justify-content:space-between; padding:10px 14px; border-radius:10px; margin-bottom:10px;
+                            background:@(Valido ? "rgba(46,204,122,.1)" : "rgba(224,51,34,.1)");">
+                    <span>Vuelto</span>
+                    <span class="mono" style="font-weight:700; font-size:18px; color:@(Valido ? "var(--color-green)" : "var(--color-red)");">
+                        @(Valido ? $"S/{Vuelto:F2}" : "Monto insuficiente")
+                    </span>
+                </div>
+            }
+        }
+        else if (_metodo == MetodoPago.Yape || _metodo == MetodoPago.Plin)
+        {
+            <div style="text-align:center; padding:12px 0 14px;">
+                <div class="mono" style="font-weight:700; font-size:22px;">+51 990 607 385</div>
+                <div class="muted" style="font-size:11px;">Muestra el QR al cliente — confirma el pago recibido</div>
+            </div>
+        }
+        else if (_metodo == MetodoPago.MercadoPago)
+        {
+            <div style="background:var(--color-navy3); border-radius:12px; padding:18px; margin-bottom:14px; text-align:center;">
+                <div style="font-size:32px;">🏦</div>
+                <div style="font-family:var(--font-heading); font-weight:700; font-size:16px;">Redirigir a Mercado Pago (sandbox)</div>
+                <div class="muted" style="font-size:12px; margin-top:4px;">RF008 — pasarela externa para pagos delivery</div>
+            </div>
+        }
+
+        <div style="display:flex; gap:10px; margin-top:6px;">
+            <button class="btn btn-ghost" @onclick="() => OnCerrar.InvokeAsync()">Cancelar</button>
+            <button class="btn btn-primary"
+                    style="flex:1; padding:12px 0; font-size:17px;"
+                    disabled="@(!Valido)"
+                    @onclick="Confirmar">
+                ✓ CONFIRMAR COBRO
+            </button>
+        </div>
+    </div>
+</div>
